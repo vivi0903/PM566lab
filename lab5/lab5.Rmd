@@ -1,0 +1,185 @@
+---
+title: "lab5"
+author: "Yuwei Wu"
+date: "`r Sys.Date()`"
+output: github_document
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(R.utils)
+library(data.table)
+library(tidyverse)
+library(lubridate)
+library(dtplyr)
+```
+
+## 1. Read in the data
+```{r read-data, cache= TRUE}
+if (!file.exists("met_all.gz"))
+  download.file(
+    url = "https://raw.githubusercontent.com/USCbiostats/data-science-data/master/02_met/met_all.gz",
+    destfile = "met_all.gz",
+    method   = "libcurl",
+    timeout  = 60
+    )
+met <- data.table::fread("met_all.gz")
+```
+
+
+## 2. Prepare the data
+Remove temperatures less than -17C and change elev 9999 to missing value code.
+```{r}
+met <- met[temp>-17][elev==9999.0,elve := NA]
+```
+
+Read in the station data.
+
+```{r}
+# Download the data
+stations <- fread("ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.csv")
+stations[, USAF := as.integer(USAF)]
+
+# Dealing with NAs and 999999
+stations[, USAF   := fifelse(USAF == 999999, NA_integer_, USAF)]
+stations[, CTRY   := fifelse(CTRY == "", NA_character_, CTRY)]
+stations[, STATE  := fifelse(STATE == "", NA_character_, STATE)]
+
+# Selecting the three relevant columns, and keeping unique records
+stations <- unique(stations[, list(USAF, CTRY, STATE)])
+
+# Dropping NAs
+stations <- stations[!is.na(USAF)]
+
+# Removing duplicates
+stations[, n := 1:.N, by = .(USAF)]
+stations <- stations[n == 1,][, n := NULL]
+```
+
+Merge the data with station.
+```{r merge-datatables}
+met <- merge(
+  # Data
+  x     = met,      
+  y     = stations, 
+  # List of variables to match
+  by.x  = "USAFID",
+  by.y  = "USAF", 
+  # Which obs to keep?
+  all.x = TRUE,      
+  all.y = FALSE
+  )
+```
+
+# Question 1: Representative station for the US
+
+```{r}
+station_averages <-
+    met[, .(
+      temp = mean(temp, na.rm = T),
+      wind.sp = mean(wind.sp,na.rm = T),
+      atm.press = mean(atm.press,na.rm = T)
+    ), by = USAFID]
+```
+
+The above computes the mean by weather station.
+Now it's compute the median value for each variable.
+
+```{r}
+statmedians= station_averages[, .(
+  temp50 = median(temp, na.rm=T),
+  windsp50 = median(wind.sp, na.rm=T),
+  atmpress50 = median(atm.press, na.rm=T)
+)]
+statmedians
+```
+
+```{r}
+summary(station_averages[ , temp])
+```
+
+A helpful function we might want to usc 'which.min()'.
+
+```{r}
+station_averages[ , 
+                  temp_dist50 := abs(temp- statmedians$temp50)][order(temp_dist50)]
+```
+
+
+```{r}
+station_averages[which.min(temp_dist50)]
+```
+It matches the result above.
+
+# Question 2: Representative station per state.
+Just like the previous question, you are asked to identify what is the most representative, the median, station per state. This time, instead of looking at one variable at a time, look at the euclidean distance. If multiple stations show in the median, select the one located at the lowest latitude.
+
+```{r}
+station_averages <-
+    met[, .(
+      temp = mean(temp, na.rm = T),
+      wind.sp = mean(wind.sp,na.rm = T),
+      atm.press = mean(atm.press,na.rm = T)
+    ), by = .(USAFID, STATE)]
+```
+
+```{r}
+statemeds = station_averages[,.(
+      temp50 = median(temp, na.rm = T),
+      windsp50 = median(wind.sp, na.rm = T),
+      atmpress50 = median(atm.press,na.rm = T)
+), by = STATE]
+statemeds
+```
+
+```{r}
+station_averages= 
+  merge(
+  x= station_averages,
+  y= statemeds,
+  by.x= "STATE",
+  by.y= "STATE",
+  all.x= T,
+  ALL.y= F
+)
+```
+
+```{r}
+station_averages[ , temp_dist_state50 := temp- temp50]
+station_averages[ , windsp_dist_state50 := wind.sp- windsp50]             
+station_averages[ , atmpress_dist_state50 := atm.press- atmpress50]      
+```
+
+```{r}
+station_averages[ , eucdist := temp_dist_state50^2 +
+                    windsp_dist_state50^2]
+station_averages[ , .(
+  rep50= min(eucdist))
+  , by=STATE]
+```
+
+```{r}
+repstation= station_averages[ , .(
+  eucdist= min(eucdist))
+  , by=STATE]
+```
+
+```{r}
+test= merge(
+  x= station_averages,
+  y= repstation,
+  by.x= c("eucdist","STATE"),
+  by.y= c("eucdist","STATE"),
+  all.x= F,
+  all.y= T
+)
+```
+
+```{r}
+dim(test)
+```
+
