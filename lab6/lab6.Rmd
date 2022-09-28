@@ -1,0 +1,145 @@
+---
+title: "lab6"
+author: "Yuwei Wu"
+date: "`r Sys.Date()`"
+output: github_document
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(dtplyr)
+library(ggplot2)
+library(forcats)
+```
+
+## 1. Read in the data
+```{r read-data, cache= TRUE}
+if (!file.exists("mtsamples.csv"))
+  download.file(
+    url = "https://raw.githubusercontent.com/USCbiostats/data-science-data/master/00_mtsamples/mtsamples.csv",
+    destfile = "mtsamples.csv",
+    method   = "libcurl",
+    timeout  = 60
+    )
+mts <- read.csv("mtsamples.csv")
+str(mts)
+mts<- as_tibble(mts)
+```
+
+
+## What specialties do we have? What are the frequencies of each?
+```{r specialties, cache=TRUE}
+library(dplyr)
+specialties <- count(mts, medical_specialty)
+specialties %>%
+    arrange(desc(n)) %>% 
+      knitr::kable()
+```
+There are `r nrow(specialties)` medical specialties. The frequency is not evenly distributed. Surgery is most common with 1103 entries, Hospice - Palliative Care is the least frequent with 6 entries. Some are related - ie Consult - History and Physical and Discharge Summary are not specialty-specific. 
+```{r graph specialties}
+library(dplyr)
+library(ggplot2)
+library(forcats)
+specialties %>% 
+  top_n(10) %>%
+  ggplot(aes(x=n, y= fct_reorder(medical_specialty, n))) +
+  geom_col()
+```
+## Tokenize words in transcription and look at top 20
+```{r tokenize, cache = TRUE}
+mts %>%
+  unnest_tokens(word, transcription) %>%
+  count(word, sort=TRUE) %>%
+  top_n(20, n) %>%
+  ggplot(aes(x=n, y=fct_reorder(word, n))) +
+  geom_col()
+```
+There are a lot of stop words here. The top word is "the" while we do see "patient". We should get rid of the stop words.
+
+## Remove stop words
+```{r remove stopwords, cache=TRUE}
+mts %>%
+  unnest_tokens(word, transcription) %>%
+  count(word, sort=TRUE) %>%
+  anti_join(stop_words, by = c("word")) %>%
+  filter(!grepl(pattern = "^[0-9]+$", x=word)) %>%
+  top_n(20, n) %>%
+  ggplot(aes(x=n, y=fct_reorder(word, n))) +
+  geom_col()
+  
+```
+These look more likel medical terms. Numbers were removed from the list of words.
+
+## Repeat question 2, but this time tokenize into bi-grams. how does the result change if you look at tri-grams?
+```{r bigrams, cache=TRUE}
+mts %>%
+  unnest_ngrams(bigram, transcription, n=2) %>%
+  count(bigram, sort=TRUE) %>%
+  top_n(20, n) %>%
+  ggplot(aes(x=n, y=fct_reorder(bigram, n))) +
+  geom_col()
+```
+"The patient" was the top bigram. There are a lot of non-interesting bigrams (of the, in the).
+
+```{r trigrams, cache=TRUE}
+mts %>%
+  unnest_ngrams(trigram, transcription, n=3) %>%
+  count(trigram, sort=TRUE) %>%
+  top_n(20, n) %>%
+  ggplot(aes(x=n, y=fct_reorder(trigram, n))) +
+  geom_col()
+```
+Top 20 trigrams seem more medical.
+
+## Using the results you got from questions 4. Pick a word and count the words that appears after and before it.
+```{r bigrams next word, cache=TRUE}
+ptbigram <- 
+  mts %>%
+  unnest_ngrams(bigram, transcription, n=2) %>%
+  separate(bigram, into = c("word1", "word2"), sep = " ") %>%
+  select(word1, word2) %>%
+  filter(word1 == "patient" | word2 == "patient")
+```
+
+Words appearing before patient
+```{r bigrams before patient, cache=TRUE}
+ptbigram %>%
+  filter(word2 == "patient") %>%
+  count(word1, sort=TRUE) %>%
+  anti_join(stop_words, by = c("word1" = "word")) %>%
+  top_n(10, n) %>%
+  ggplot(aes(x=n, y=fct_reorder(word1, n))) +
+  geom_col()
+```
+Words appearing after patient
+```{r bigrams after patient, cache=TRUE}
+ptbigram %>%
+  filter(word1 == "patient") %>%
+  count(word2, sort=TRUE) %>%
+  anti_join(stop_words, by = c("word2" = "word")) %>%
+  top_n(10, n) %>%
+  ggplot(aes(x=n, y=fct_reorder(word2, n))) +
+  geom_col()
+```
+Looks reasonable!
+
+## Which words are most used in each of the specialties. you can use group_by() and top_n() from dplyr to have the calculations be done within each specialty. Remember to remove stopwords. How about the most 5 used words?
+```{r most common by specialty, cache=TRUE}
+mts %>%
+  unnest_tokens(word, transcription) %>%
+  group_by(medical_specialty) %>%
+  count(word, sort=TRUE) %>%
+  anti_join(stop_words, by = c("word")) %>%
+  filter(!grepl(pattern = "^[0-9]+$", x=word)) %>%
+  top_n(5, n) %>%
+  arrange(medical_specialty, desc(n)) %>%
+knitr::kable()
+```
+
+
