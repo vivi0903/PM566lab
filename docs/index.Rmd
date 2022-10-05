@@ -12,6 +12,11 @@ knitr::opts_chunk$set(echo = TRUE)
 # Question 1: How many sars-cov-2 papers?
 Build an automatic counter of sars-cov-2 papers using PubMed. You will need to apply XPath as we did during the lecture to extract the number of results returned by PubMed in the following web address:
 
+```{r}
+
+```
+
+
 
 
 
