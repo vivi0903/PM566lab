@@ -17,17 +17,6 @@ library(parallel)
 library(tinytex)
 ```
 
-## Problem 1: Think
-Give yourself a few minutes to think about what you just learned. List three examples of problems that you believe may be solved using parallel computing, and check for packages on the HPC CRAN task view that may be related to it.
-
-1. Classification of a great number of data/images into several categories
-   May use randomForestSRC, tensorflow
-2. Training model using CNN/RNN in CV/NLP projects
-   May use tensorflow, batch
-3. Simulation of random trials
-   May use parSim
-
-
 ## Problem 2: Before you
 The following functions can be written to be more efficient without using parallel:
 

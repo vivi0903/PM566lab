@@ -3,19 +3,6 @@ lab9
 Yuwei Wu
 2022-10-26
 
-## Problem 1: Think
-
-Give yourself a few minutes to think about what you just learned. List
-three examples of problems that you believe may be solved using parallel
-computing, and check for packages on the HPC CRAN task view that may be
-related to it.
-
-1.  Classification of a great number of data/images into several
-    categories May use randomForestSRC, tensorflow
-2.  Training model using CNN/RNN in CV/NLP projects May use tensorflow,
-    batch
-3.  Simulation of random trials May use parSim
-
 ## Problem 2: Before you
 
 The following functions can be written to be more efficient without
@@ -57,9 +44,9 @@ microbenchmark::microbenchmark(
 ```
 
     ## Unit: microseconds
-    ##       expr     min       lq      mean   median       uq      max neval
-    ##     fun1() 555.301 622.1010 807.07905 766.4015 945.4510 1851.401   100
-    ##  fun1alt()  24.801  27.7005  95.56993  36.8505  47.7005 5532.401   100
+    ##       expr     min       lq      mean  median       uq      max neval
+    ##     fun1() 502.301 568.8010 603.65307 583.651 627.2510  856.200   100
+    ##  fun1alt()  24.900  27.0005  65.79099  27.801  28.7505 3601.502   100
 
 Rscript –vanilla -e ‘rmarkdown::render(“README.Rmd”, output_format =
 “all”)’
@@ -115,9 +102,9 @@ microbenchmark::microbenchmark(
 ```
 
     ## Unit: microseconds
-    ##        expr      min       lq     mean    median       uq      max neval
-    ##     fun2(x) 1681.201 1881.501 2573.960 2769.2010 3013.451 5054.302   100
-    ##  fun2alt(x)  162.802  217.200  352.307  319.0015  403.251 3963.202   100
+    ##        expr      min       lq      mean    median       uq      max neval
+    ##     fun2(x) 1653.301 2954.001 3287.0680 3081.4015 3435.101 9857.301   100
+    ##  fun2alt(x)  203.201  333.401  495.1829  401.8505  499.201 6347.100   100
 
 ## Problem 3: Parallelize everyhing
 
@@ -176,9 +163,9 @@ microbenchmark::microbenchmark(
 ```
 
     ## Unit: microseconds
-    ##        expr      min        lq      mean   median        uq      max neval
-    ##     fun2(x) 1596.002 1668.9505 1834.9960 1696.151 1786.8510 4591.002   100
-    ##  fun2alt(x)  160.201  170.9015  265.3101  214.301  264.2015 3677.401   100
+    ##        expr      min        lq     mean   median       uq      max neval
+    ##     fun2(x) 1607.001 1678.7505 2366.909 2591.001 2891.150 4696.000   100
+    ##  fun2alt(x)  160.501  191.0015  302.060  218.401  295.751 4440.001   100
 
 ``` r
 library(parallel)
