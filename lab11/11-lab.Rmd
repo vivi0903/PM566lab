@@ -8,7 +8,6 @@ editor_options:
 always_allow_html: true
 ---
 
-
 **And remember to set `eval=TRUE`**
 
 ```{r setup, message=FALSE, echo=FALSE, warning=FALSE}
