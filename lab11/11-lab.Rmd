@@ -21,7 +21,7 @@ library(widgetframe)
 opts_chunk$set(
   warning = FALSE,
   message = FALSE,
-  eval=FALSE,
+  eval=TRUE,
   echo = TRUE,
   cache=FALSE,
   include=TRUE,
@@ -29,6 +29,7 @@ opts_chunk$set(
   fig.align = 'center',
   fig.asp = 0.618,
   out.width = "700px")
+
 
 
 ```
@@ -60,8 +61,10 @@ We will work with COVID data downloaded from the New York Times. The dataset con
 
 ## data extracted from New York Times state-level data from NYT Github repository
 # https://github.com/nytimes/covid-19-data
+
 ## state-level population information from us_census_data available on GitHub repository:
 # https://github.com/COVID19Tracking/associated-data/tree/master/us_census_data
+
 ### FINISH THE CODE HERE ###
 # load COVID state-level data from NYT
 cv_states <- as.data.frame(data.table::fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv"))
